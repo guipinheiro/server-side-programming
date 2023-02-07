@@ -144,3 +144,93 @@ app.listen(3000);
 ```
 
 ## Serving Static Files
+
+You can use `express.static()` middleware (which is one of the middleware function that is part of Express like `.json()`, `.raw()`, etc.) to serve static files. You could have a lot of files in, say, a directory called public with files, CSS, JS and HTML files that you wish your users could access. You can just use the `static()` middleware to do this in Express:
+
+```js
+app.use(express.static("public"));
+```
+
+Any files in the public directory are served by adding their filename (relative to the public directory) to the base URL.
+
+You can use `static()` multiple times for multiple folders.
+
+Example: `../Practice/01_Node_Express_Intro/06_serveStaticFiles.js`
+
+## Handling Errors
+
+Errors are handled by one or more special middleware functions that have four arguments: `(err, req, res, next)`
+
+```js
+app.use(function (err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
+```
+
+They can return any content required, however they must be called after all other `app.use()` and routes have being called, so they are the last middleware in the request handling process.
+
+> **Note:** 404 and other error status codes are not treated as error by express, so they are ignored. If you want to handle these errors, you have to use a middleware for it.
+
+[More info on error handling.](https://expressjs.com/en/guide/error-handling.html).
+
+## Using Databases
+
+Express can handle any database supported by Node, like PostgreSQL, MySQL, Redis, SQLite, MongoDB, etc.
+
+To use them, first you need to install the database driver (`npm install mongodb` for instance). After that, you can connect it using express:
+
+```js
+const MongoClient = require("mongodb").MongoClient;
+
+MongoClient.connect("mongodb://localhost:27017/animals", (err, client) => {
+  if (err) throw err;
+
+  const db = client.db("animals");
+  db.collection("mammals")
+    .find()
+    .toArray((err, result) => {
+      if (err) throw err;
+      console.log(result);
+      client.close();
+    });
+});
+```
+
+The DB can be installed locally or in a cloud server, then you can perform CRUD (Create, Read, Update, Delete)operations.
+
+Instead of using the database semantics to access and manipulate the data, you can use a ORM (Object Relational Mapper) to deal with it. The benefit of doing so is that you can still think in terms of the language you are working on and the ORM will do the work of converting the code you write into one the database will understand. Mangoose is one you can use for MongoDB.
+
+## Rendering Data (views)
+
+Template engines ("view engines" by the Express docs) allow you to specify the structure of an output document in a template, using placeholders for data that will be filled when the page is generated, usually HTML, but it could be other formats.
+
+[List of the most famous template engines for JS.](https://colorlib.com/wp/top-templating-engines-for-javascript/)
+
+In you application settings, you should define where Express should look for templates (you need to install your engine to run it).
+
+```js
+const express = require("express");
+const path = require("path");
+const app = express();
+
+// Set directory to contain the templates ('views')
+app.set("views", path.join(__dirname, "views"));
+
+// Set view engine to use, in this case 'some_template_engine_name'
+app.set("view engine", "some_template_engine_name");
+```
+
+The appearance of the template will depend on what engine you use. Assuming that you have a template file named "index.<template_extension>" that contains placeholders for data variables named 'title' and "message", you would call `Response.render()` in a route handler function to create and send the HTML response:
+
+```js
+app.get("/", function (req, res) {
+  res.render("index", { title: "About dogs", message: "Dogs rock!" });
+});
+```
+
+[Using templates with Express - Docs.](https://expressjs.com/en/guide/using-template-engines.html)
+
+## File Structure
+
+Express is agnostic, it makes no assumption on what structure or components you use. You can split your application in many files in any number of directories. So, you do not need to worry about a specific file structure your application must have.
