@@ -20,6 +20,7 @@ const mangoose = require("mangoose");
 mangoose.set("strictQuery", false);
 let url = readFileLines("../restricted/mongodb_guipinheiro.txt")[0];
 const mongoDB = url;
+// const mongoDB = "mongodb://127.0.0.1:27017/"
 
 main().catch((err) => console.log(err));
 async function main() {
