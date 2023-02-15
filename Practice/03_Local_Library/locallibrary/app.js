@@ -12,19 +12,20 @@ const readFileLines = (filename) => fs.readFileSync(filename).toString("UTF8").s
 // Routing
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
+const catalogRouter = require("./routes/catalog");
 
 var app = express();
 
 // Setting up database
-const mangoose = require("mangoose");
-mangoose.set("strictQuery", false);
+const mongoose = require("mongoose");
+mongoose.set("strictQuery", false);
 let url = readFileLines("../restricted/mongodb_guipinheiro.txt")[0];
 const mongoDB = url;
 // const mongoDB = "mongodb://127.0.0.1:27017/"
 
 main().catch((err) => console.log(err));
 async function main() {
-	await mangoose.connect(mongoDB);
+	await mongoose.connect(mongoDB);
 }
 
 // view engine setup
@@ -41,6 +42,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // Add route-handling code to request
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
+app.use("/catalog", catalogRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
