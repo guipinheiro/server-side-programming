@@ -511,4 +511,110 @@ exports.some_model_count = function (req, res, next) {
 };
 ```
 
-However, what happens when you have to make multiple asynchronous operations to them load the page? One approach would be to "daisy chain" the requests, kicking off the subsequent
+However, what happens when you have to make multiple asynchronous operations to them load the page? One approach would be to "daisy chain" the requests, kicking off subsequent requests in the callback of the previous requests. This can be a problem because it is a serialized approach, even though a parallel requests would be more efficient depending on the operation. Also, it could lead to a 'callback hell' situation.
+
+It would be much better to execute all requests in parallel, and then have a single callback that executes when all queries have being completed. This sort of operation that `Async` module helps with.
+
+### Async operations in **parallel**
+
+The first argument of a `async.parallel()` function is a collection of asynchronous functions to run (an array, object, or other iterable).
+
+Each function is passed a callback(err, result) which it must call on completion an error `err` and an optional `result` value.
+
+The second argument is a callback which will be run when all functions of the first argument have being completed. The callback is invoked with an error argument and a collection that contains results of the individual async operations. The result collection is of the same type as the first argument (i.e. if you pass an array of asynchronous functions, the final callback will be invoked with an array of results). If any of the parallel functions reports an error, the callback is invoked early (with an error value):
+
+```js
+async.parallel(
+  {
+    one(callback) {
+      /* … */
+    },
+    two(callback) {
+      /* … */
+    },
+    // …
+    something_else(callback) {
+      /* … */
+    },
+  },
+  // optional callback
+  function (err, results) {
+    // 'results' is now equal to: {one: 1, two: 2, …, something_else: some_value}
+  }
+);
+```
+
+If you instead pass an array of functions as the first argument, the results will be an array (the array order results will match the original order that the functions were declared—not the order in which they completed).
+
+### Async operations in **series**
+
+The method `async.series()` is used to run multiple asynchronous operations in sequence, when subsequent functions do not depend on the output of earlier functions. It is essentially declared and behaves in the same way as `async.parallel()`
+
+```js
+async.series(
+  {
+    one(callback) {
+      // …
+    },
+    two(callback) {
+      // …
+    },
+    // …
+    something_else(callback) {
+      // …
+    },
+  },
+  // optional callback after the last asynchronous function completes.
+  function (err, results) {
+    // 'results' is now equal to: {one: 1, two: 2, /* …, */ something_else: some_value}
+  }
+);
+```
+
+> Note: The ECMAScript (JavaScript) language specification states that the order of enumeration of an object is undefined, so it is possible that the functions will not be called in the same order as you specify them on all platforms. If the order really is important, then you should pass an array instead of an object, as shown below.
+
+```js
+async.series(
+  [
+    function (callback) {
+      // do some stuff …
+      callback(null, "one");
+    },
+    function (callback) {
+      // do some more stuff …
+      callback(null, "two");
+    },
+  ],
+  // optional callback
+  function (err, results) {
+    // results is now equal to ['one', 'two']
+  }
+);
+```
+
+### **Dependent** async operations in series
+
+The `method async.waterfall()` is used to run multiple asynchronous operations in sequence when each operation is dependent on the result of the previous operation.
+
+The callback invoked by each asynchronous function contains null for the first argument and results in subsequent arguments. Each function in the series takes the results arguments of the previous callback as the first parameters, and then a callback function. When all operations are complete, a final callback is invoked with the result of the last operation.
+
+```js
+async.waterfall(
+  [
+    function (callback) {
+      callback(null, "one", "two");
+    },
+    function (arg1, arg2, callback) {
+      // arg1 now equals 'one' and arg2 now equals 'two'
+      callback(null, "three");
+    },
+    function (arg1, callback) {
+      // arg1 now equals 'three'
+      callback(null, "done");
+    },
+  ],
+  function (err, result) {
+    // result now equals 'done'
+  }
+);
+```
